@@ -13,7 +13,7 @@ We built dbt-synthea to demonstrate the power of dbt for building OMOP ETLs.  **
 
 ## Developer Setup
 
-Currently this project is set up to run an OMOP ETL into either duckdb or Postgres.  Setup instructions for each are provided below.
+Currently this project is set up to run an OMOP ETL into Postgres.  Setup instructions are provided below.
 
 By default, the project will source the Synthea and OMOP vocabulary data from seed files stored in this repository.  The seed Synthea dataset is a small dataset of 27 patients and their associated clinical data.  The vocabulary seeds contain a subset of the OMOP vocabulary limited only to the concepts relevant to this specific Synthea dataset.
 
@@ -41,59 +41,6 @@ dbt-env\Scripts\activate            # activate the environment for Windows
    - Create a file in the `~/.dbt/` directory named `profiles.yml` (if you've already got this directory and file, you can skip this step and add profile block(s) for this project to that file)
    - Create a `profiles.yml` file in the root of the `dbt-synthea` repo folder
    - Create the file wherever you wish, following the guidance [here](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory)
-
-### DuckDB Setup
- 1. In your virtual environment install requirements for duckdb (see [here for contents](./requirements/duckdb.in))
-```bash
-pip3 install -r requirements/duckdb.txt
-pre-commit install
-```
-
- 2. Add the following block to your `profiles.yml` file:
-```yaml
-synthea_omop_etl:
-  outputs:
-    dev:
-      type: duckdb
-      path: synthea_omop_etl.duckdb
-      schema: dbt_synthea_dev
-  target: dev
-```
-
- 3. Ensure your profile is setup correctly using dbt debug:
-```bash
-dbt debug
-```
-
- 4. Load dbt dependencies:
-```bash
-dbt deps
-```
-
- 5. **If you'd like to run the default ETL using the pre-seeded Synthea dataset,** run `dbt seed` to load the CSVs with the Synthea dataset and vocabulary data. This materializes the seed CSVs as tables in your target schema (vocab) and a _synthea schema (Synthea tables).  **Then, skip to step 9 below.**
-```bash
-dbt seed
-```
- 6. **If you'd like to run the ETL on your own Synthea dataset,** first toggle the `seed_source` variable in `dbt_project.yml` to `false`. This will tell dbt not to look for the source data in the seed schemas.
- 
- 7. **[BYO DATA ONLY]** Load your Synthea and Vocabulary data into the database by running the following commands (modify the commands as needed to specify the path to the folder storing the Synthea and vocabulary csv files, respectively).  The vocabulary tables will be created in the target schema specified in your profiles.yml for the profile you are targeting.  The Synthea tables will be created in a schema named "<target schema>_synthea".  **NOTE only Synthea v3.0.0 is supported at this time.**
-``` bash
-file_dict=$(python3 scripts/python/get_csv_filepaths.py path/to/synthea/csvs)
-dbt run-operation load_data_duckdb --args "{file_dict: $file_dict, vocab_tables: false}"
-file_dict=$(python3 scripts/python/get_csv_filepaths.py path/to/vocab/csvs)
-dbt run-operation load_data_duckdb --args "{file_dict: $file_dict, vocab_tables: true}"
-```
-
- 8. Seed the location mapper:
-```bash
-dbt seed --select states
-```
-
- 9. Build the OMOP tables:
-```bash
-dbt build
-# or `dbt run`, `dbt test`
-```
 
 ### Postgres Setup
  1. In your virtual environment install requirements for Postgres (see [here for contents](./requirements/postgres.in))
